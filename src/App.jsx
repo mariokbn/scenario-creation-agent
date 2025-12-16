@@ -213,7 +213,29 @@ function App() {
             for (const driver of Object.keys(change.filters)) {
               if (change.filters[driver].length > 0) {
                 const attributeValue = attributes[driver]
-                if (!attributeValue || !change.filters[driver].includes(attributeValue)) {
+                const filterValues = change.filters[driver]
+                
+                // Handle both single values and arrays
+                let valueMatches = false
+                if (Array.isArray(attributeValue)) {
+                  // If attribute is an array, check if any value matches
+                  valueMatches = attributeValue.some(val => filterValues.includes(val))
+                } else if (attributeValue) {
+                  // Single value - check direct match
+                  valueMatches = filterValues.includes(attributeValue)
+                  
+                  // Also check raw value if it exists (for aggregations like pack_size)
+                  if (!valueMatches && attributes[`${driver}_raw`]) {
+                    valueMatches = filterValues.some(fv => {
+                      // Check if filter value matches the raw value or formatted value
+                      return fv === attributes[`${driver}_raw`] || 
+                             fv === attributeValue ||
+                             fv.endsWith(`_${attributes[`${driver}_raw`]}`)
+                    })
+                  }
+                }
+                
+                if (!valueMatches) {
                   matches = false
                   break
                 }
