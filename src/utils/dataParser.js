@@ -160,6 +160,7 @@ export function extractValueDrivers(productMaster) {
   }
   
   productMaster.forEach(product => {
+    // Extract from product-level attributes
     if (product && product.attributes && Array.isArray(product.attributes)) {
       product.attributes.forEach(attr => {
         if (attr && attr.valueDriverReferenceId && attr.referenceId) {
@@ -173,6 +174,53 @@ export function extractValueDrivers(productMaster) {
             }
             drivers[driverId].add(referenceId)
           }
+        }
+      })
+    }
+    
+    // Extract from variant-level attributes
+    if (product && product.variants && Array.isArray(product.variants)) {
+      product.variants.forEach(variant => {
+        if (variant && variant.attributes && Array.isArray(variant.attributes)) {
+          variant.attributes.forEach(attr => {
+            if (attr && attr.valueDriverReferenceId && attr.referenceId) {
+              const driverId = attr.valueDriverReferenceId
+              const referenceId = attr.referenceId
+              
+              // Ensure both are strings
+              if (typeof driverId === 'string' && typeof referenceId === 'string') {
+                if (!drivers[driverId]) {
+                  drivers[driverId] = new Set()
+                }
+                drivers[driverId].add(referenceId)
+              }
+            }
+          })
+        }
+        
+        // Extract from variant aggregations (e.g., pack_size in aggregations object)
+        if (variant && variant.aggregations && typeof variant.aggregations === 'object') {
+          Object.keys(variant.aggregations).forEach(driverId => {
+            const value = variant.aggregations[driverId]
+            
+            // Only process if it's a valid value driver key and has a value
+            if (driverId && value != null && value !== '') {
+              // Convert value to string and create referenceId format
+              const referenceId = `${driverId}_${String(value)}`
+              
+              if (typeof driverId === 'string') {
+                if (!drivers[driverId]) {
+                  drivers[driverId] = new Set()
+                }
+                // Add both the formatted referenceId and the raw value
+                drivers[driverId].add(referenceId)
+                // Also add the raw value if it's different (for matching purposes)
+                if (referenceId !== String(value)) {
+                  drivers[driverId].add(String(value))
+                }
+              }
+            }
+          })
         }
       })
     }
