@@ -86,14 +86,14 @@ export async function parseCsvFile(file) {
     content = decoder.decode(arrayBuffer)
   }
   
-  const       // Parse CSV with semicolon delimiter (required for European number formats)
-      csvData = Papa.parse(content, {
-        header: true,
-        skipEmptyLines: true,
-        delimiter: ';',
-        quoteChar: '"',
-        escapeChar: '"'
-      }).data
+  // Parse CSV with semicolon delimiter (required for European number formats)
+  const csvData = Papa.parse(content, {
+    header: true,
+    skipEmptyLines: true,
+    delimiter: ';',
+    quoteChar: '"',
+    escapeChar: '"'
+  }).data
   
   return csvData
 }
