@@ -277,6 +277,9 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
   }
 
   const formatDriverName = (driver) => {
+    if (!driver || typeof driver !== 'string') {
+      return String(driver || 'Unknown')
+    }
     return driver
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -284,6 +287,9 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
   }
 
   const formatValueName = (value) => {
+    if (!value || typeof value !== 'string') {
+      return String(value || 'Unknown')
+    }
     return value
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -350,7 +356,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                   )}
                 </p>
                 <div className="filter-grid">
-                  {Object.keys(valueDrivers).map(driver => (
+                  {Object.keys(valueDrivers).filter(driver => driver != null && valueDrivers[driver] && Array.isArray(valueDrivers[driver])).map(driver => (
                     <div key={driver} className="filter-select-group">
                       <label className="filter-select-label">
                         {formatDriverName(driver)}
@@ -359,7 +365,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                         )}
                       </label>
                       <div className="filter-select-options">
-                        {valueDrivers[driver].slice(0, 5).map(value => (
+                        {valueDrivers[driver].filter(value => value != null).slice(0, 5).map(value => (
                           <label key={value} className="filter-select-option">
                             <input
                               type="checkbox"
@@ -369,8 +375,8 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                             <span>{formatValueName(value)}</span>
                           </label>
                         ))}
-                        {valueDrivers[driver].length > 5 && (
-                          <span className="more-options">+{valueDrivers[driver].length - 5} more</span>
+                        {valueDrivers[driver].filter(value => value != null).length > 5 && (
+                          <span className="more-options">+{valueDrivers[driver].filter(value => value != null).length - 5} more</span>
                         )}
                       </div>
                     </div>

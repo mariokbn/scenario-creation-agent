@@ -160,23 +160,33 @@ export function extractValueDrivers(productMaster) {
   }
   
   productMaster.forEach(product => {
-    if (product.attributes && Array.isArray(product.attributes)) {
+    if (product && product.attributes && Array.isArray(product.attributes)) {
       product.attributes.forEach(attr => {
-        const driverId = attr.valueDriverReferenceId
-        if (driverId) {
-          if (!drivers[driverId]) {
-            drivers[driverId] = new Set()
+        if (attr && attr.valueDriverReferenceId && attr.referenceId) {
+          const driverId = attr.valueDriverReferenceId
+          const referenceId = attr.referenceId
+          
+          // Ensure both are strings
+          if (typeof driverId === 'string' && typeof referenceId === 'string') {
+            if (!drivers[driverId]) {
+              drivers[driverId] = new Set()
+            }
+            drivers[driverId].add(referenceId)
           }
-          drivers[driverId].add(attr.referenceId)
         }
       })
     }
   })
   
-  // Convert Sets to Arrays and sort
+  // Convert Sets to Arrays and sort, filtering out any null/undefined values
   const result = {}
   Object.keys(drivers).forEach(key => {
-    result[key] = Array.from(drivers[key]).sort()
+    if (key != null) {
+      const values = Array.from(drivers[key]).filter(v => v != null && typeof v === 'string')
+      if (values.length > 0) {
+        result[key] = values.sort()
+      }
+    }
   })
   
   return result

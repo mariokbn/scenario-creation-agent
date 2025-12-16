@@ -37,11 +37,13 @@ function LLMPrompt({ valueDrivers, productMaster, csvColumns, csvColumnValues, o
 
   const interpretPrompt = async (userPrompt, valueDrivers, productMaster, csvColumns, csvColumnValues) => {
     // Extract available value drivers and their options for context
-    const valueDriverContext = Object.keys(valueDrivers).map(driver => ({
-      name: driver,
-      displayName: driver.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-      options: valueDrivers[driver].slice(0, 10) // Limit to first 10 for context
-    }))
+    const valueDriverContext = Object.keys(valueDrivers)
+      .filter(driver => driver != null && typeof driver === 'string')
+      .map(driver => ({
+        name: driver,
+        displayName: driver.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        options: (valueDrivers[driver] || []).filter(v => v != null).slice(0, 10) // Limit to first 10 for context
+      }))
 
     // Extract CSV column information
     const csvColumnContext = csvColumns ? csvColumns.map(col => ({

@@ -19,6 +19,9 @@ function FilterPanel({ valueDrivers, filters, onFilterChange, productMaster }) {
   }
 
   const formatDriverName = (driver) => {
+    if (!driver || typeof driver !== 'string') {
+      return String(driver || 'Unknown')
+    }
     return driver
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -26,6 +29,9 @@ function FilterPanel({ valueDrivers, filters, onFilterChange, productMaster }) {
   }
 
   const formatValueName = (value) => {
+    if (!value || typeof value !== 'string') {
+      return String(value || 'Unknown')
+    }
     return value
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -43,7 +49,7 @@ function FilterPanel({ valueDrivers, filters, onFilterChange, productMaster }) {
         <p className="no-filters">No value drivers found in product master</p>
       ) : (
         <div className="filter-list">
-          {Object.keys(valueDrivers).map(driver => (
+          {Object.keys(valueDrivers).filter(driver => driver != null).map(driver => (
             <div key={driver} className="filter-group">
               <div 
                 className="filter-group-header"
@@ -62,9 +68,9 @@ function FilterPanel({ valueDrivers, filters, onFilterChange, productMaster }) {
                 )}
               </div>
               
-              {expanded[driver] && (
+              {expanded[driver] && valueDrivers[driver] && Array.isArray(valueDrivers[driver]) && (
                 <div className="filter-options">
-                  {valueDrivers[driver].map(value => (
+                  {valueDrivers[driver].filter(value => value != null).map(value => (
                     <label key={value} className="filter-option">
                       <input
                         type="checkbox"
