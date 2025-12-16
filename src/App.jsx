@@ -303,14 +303,37 @@ function App() {
         return newRow
       })
       
-      // Count how many rows were actually modified
-      const modifiedRows = newScenario.filter(row => {
-        return (row['Price Change'] !== '' && row['Price Change'] !== undefined) ||
-               (row['Availability Change'] !== '' && row['Availability Change'] !== undefined) ||
-               (row['Cost Change'] !== '' && row['Cost Change'] !== undefined)
-      }).length
+      // Filter out rows where no changes were applied
+      const rowsWithChanges = newScenario.filter(row => {
+        // Check if any change columns have values
+        const hasPriceChange = row['Price Change'] !== '' && 
+                              row['Price Change'] !== undefined && 
+                              row['Price Change'] !== null &&
+                              parseFloat(row['Price Change']) !== 0
+        
+        const hasAvailabilityChange = row['Availability Change'] !== '' && 
+                                    row['Availability Change'] !== undefined && 
+                                    row['Availability Change'] !== null &&
+                                    parseFloat(row['Availability Change']) !== 0
+        
+        const hasCostChange = row['Cost Change'] !== '' && 
+                             row['Cost Change'] !== undefined && 
+                             row['Cost Change'] !== null &&
+                             parseFloat(row['Cost Change']) !== 0
+        
+        return hasPriceChange || hasAvailabilityChange || hasCostChange
+      })
       
-      console.log(`Scenario ${comboIndex + 1}: Modified ${modifiedRows} rows out of ${newScenario.length}`)
+      console.log(`Scenario ${comboIndex + 1}: ${rowsWithChanges.length} rows with changes (filtered from ${newScenario.length} total rows)`)
+      
+      // Use only rows with changes
+      const filteredScenario = rowsWithChanges
+      
+      // Only create scenario if there are rows with changes
+      if (filteredScenario.length === 0) {
+        console.log(`Scenario ${comboIndex + 1}: Skipped - no rows with changes`)
+        return
+      }
       
       // Generate scenario name with change values
       const changeParts = []
@@ -329,10 +352,10 @@ function App() {
       // Save to Supabase (async, don't block)
       saveScenario({
         name: scenarioName,
-        data: newScenario,
+        data: filteredScenario,
         metadata: {
           changeParts,
-          modifiedRows,
+          rowsWithChanges: filteredScenario.length,
           totalRows: newScenario.length
         }
       }).then(({ data: savedData, error }) => {
@@ -343,8 +366,8 @@ function App() {
         }
       })
       
-      // Add to local state immediately
-      newScenarios.push({ name: scenarioName, data: newScenario })
+      // Add to local state immediately (only rows with changes)
+      newScenarios.push({ name: scenarioName, data: filteredScenario })
     })
     
     setScenarios([...scenarios, ...newScenarios])
