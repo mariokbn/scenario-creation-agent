@@ -289,8 +289,8 @@ function App() {
       
       const scenarioName = `Scenario_${scenarios.length + newScenarios.length + 1}_${changeParts.join('_')}_${new Date().toISOString().split('T')[0]}`
       
-      // Save to Supabase
-      const { data: savedData, error } = await saveScenario({
+      // Save to Supabase (async, don't block)
+      saveScenario({
         name: scenarioName,
         data: newScenario,
         metadata: {
@@ -298,19 +298,16 @@ function App() {
           modifiedRows,
           totalRows: newScenario.length
         }
+      }).then(({ data: savedData, error }) => {
+        if (error) {
+          console.error('Error saving scenario to Supabase:', error)
+        } else {
+          console.log('Scenario saved to Supabase:', savedData?.id)
+        }
       })
       
-      if (error) {
-        console.error('Error saving scenario:', error)
-        // Still add to local state even if Supabase save fails
-        newScenarios.push({ name: scenarioName, data: newScenario })
-      } else {
-        newScenarios.push({ 
-          name: scenarioName, 
-          data: newScenario,
-          id: savedData?.id 
-        })
-      }
+      // Add to local state immediately
+      newScenarios.push({ name: scenarioName, data: newScenario })
     })
     
     setScenarios([...scenarios, ...newScenarios])
