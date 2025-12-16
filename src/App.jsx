@@ -16,6 +16,7 @@ function App() {
   const [filteredData, setFilteredData] = useState([])
   const [showChangeDialog, setShowChangeDialog] = useState(false)
   const [showLLMPrompt, setShowLLMPrompt] = useState(false)
+  const [aiGeneratedChanges, setAiGeneratedChanges] = useState(null)
   const [scenarios, setScenarios] = useState([])
   const [attributeLookup, setAttributeLookup] = useState(null)
   const [productNameLookup, setProductNameLookup] = useState(null)
@@ -404,8 +405,12 @@ function App() {
                 filters={filters}
                 valueDrivers={valueDrivers}
                 productMaster={productMaster}
-                onClose={() => setShowChangeDialog(false)}
+                onClose={() => {
+                  setShowChangeDialog(false)
+                  setAiGeneratedChanges(null)
+                }}
                 onCreate={handleCreateScenario}
+                initialChanges={aiGeneratedChanges}
               />
             )}
 
@@ -415,7 +420,12 @@ function App() {
                 productMaster={productMaster}
                 csvColumns={csvColumns}
                 csvColumnValues={csvColumnValues}
-                onApplyChanges={handleCreateScenario}
+                onApplyChanges={(changes) => {
+                  // Populate the dialog instead of directly creating scenarios
+                  setAiGeneratedChanges(changes)
+                  setShowLLMPrompt(false)
+                  setShowChangeDialog(true)
+                }}
                 onClose={() => setShowLLMPrompt(false)}
               />
             )}

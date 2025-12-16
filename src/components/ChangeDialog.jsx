@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import './ChangeDialog.css'
 
-function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate }) {
-  const [changes, setChanges] = useState([{
+function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate, initialChanges }) {
+  const getDefaultChange = () => ({
     filters: {},
+    csvFilters: {},
     priceChange: '',
     priceChangeRange: false,
     priceChangeFrom: '',
@@ -23,30 +24,20 @@ function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate 
     costChangeTo: '',
     costChangeStep: '1',
     costChangeType: 'Absolute'
-  }])
+  })
+
+  const [changes, setChanges] = useState(initialChanges && initialChanges.length > 0 
+    ? initialChanges.map(change => ({
+        ...getDefaultChange(),
+        ...change,
+        // Ensure filters and csvFilters exist
+        filters: change.filters || {},
+        csvFilters: change.csvFilters || {}
+      }))
+    : [getDefaultChange()])
 
   const addChange = () => {
-    setChanges([...changes, {
-      filters: {},
-      priceChange: '',
-      priceChangeRange: false,
-      priceChangeFrom: '',
-      priceChangeTo: '',
-      priceChangeStep: '1',
-      priceChangeType: 'Absolute',
-      availabilityChange: '',
-      availabilityChangeRange: false,
-      availabilityChangeFrom: '',
-      availabilityChangeTo: '',
-      availabilityChangeStep: '1',
-      availabilityChangeType: 'Absolute',
-      costChange: '',
-      costChangeRange: false,
-      costChangeFrom: '',
-      costChangeTo: '',
-      costChangeStep: '1',
-      costChangeType: 'Absolute'
-    }])
+    setChanges([...changes, getDefaultChange()])
   }
 
   const removeChange = (index) => {
@@ -76,6 +67,16 @@ function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate 
       filters: { ...currentFilters, [driver]: newFilterValues }
     }
     
+    setChanges(newChanges)
+  }
+
+  // Update CSV filters display (read-only for now, can be made editable later)
+  const updateCsvFilter = (changeIndex, column, values) => {
+    const newChanges = [...changes]
+    newChanges[changeIndex] = {
+      ...newChanges[changeIndex],
+      csvFilters: { ...(newChanges[changeIndex].csvFilters || {}), [column]: values }
+    }
     setChanges(newChanges)
   }
 
@@ -235,6 +236,11 @@ function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate 
         </div>
 
         <div className="dialog-body">
+          {initialChanges && initialChanges.length > 0 && (
+            <div className="ai-populated-banner">
+              ✨ These settings were populated by AI. Please review and adjust as needed before creating scenarios.
+            </div>
+          )}
           <p className="dialog-description">
             Define one or more changes to apply. Each change can target specific products using filters
             and modify price, availability, and/or costs.
@@ -255,7 +261,23 @@ function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate 
               </div>
 
               <div className="change-section">
-                <h4>Product Filters</h4>
+                <h4>CSV Column Filters</h4>
+                <p className="section-description">Filter by CSV columns (e.g., Is Competitor, Region, Retailer)</p>
+                {change.csvFilters && Object.keys(change.csvFilters).length > 0 ? (
+                  <div className="csv-filters-display">
+                    {Object.keys(change.csvFilters).map(column => (
+                      <div key={column} className="csv-filter-badge">
+                        <strong>{column}:</strong> {change.csvFilters[column].join(', ')}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="no-filters-text">No CSV column filters set</p>
+                )}
+              </div>
+
+              <div className="change-section">
+                <h4>Product Filters (Value Drivers)</h4>
                 <p className="section-description">Select value drivers to target specific products</p>
                 <div className="filter-grid">
                   {Object.keys(valueDrivers).map(driver => (

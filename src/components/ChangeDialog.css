@@ -202,6 +202,47 @@
   border-color: #667eea;
 }
 
+.csv-filters-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.csv-filter-badge {
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  color: #1976d2;
+}
+
+.csv-filter-badge strong {
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.no-filters-text {
+  color: #999;
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+.ai-populated-banner {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border: 2px solid #4caf50;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  color: #2e7d32;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .range-toggle-group {
   margin-bottom: 10px;
 }

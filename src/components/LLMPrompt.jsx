@@ -21,6 +21,7 @@ function LLMPrompt({ valueDrivers, productMaster, csvColumns, csvColumnValues, o
       const changes = await interpretPrompt(prompt, valueDrivers, productMaster, csvColumns, csvColumnValues)
       
       if (changes && changes.length > 0) {
+        // Pass changes to populate the dialog instead of directly creating scenarios
         onApplyChanges(changes)
         onClose()
       } else {
