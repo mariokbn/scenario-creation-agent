@@ -341,41 +341,6 @@ export function createProductNameLookup(productMaster) {
       })
     }
     
-    // Collect all variant aggregations and merge them
-    if (product.variants && Array.isArray(product.variants)) {
-      product.variants.forEach(variant => {
-        if (variant.aggregations && typeof variant.aggregations === 'object') {
-          Object.keys(variant.aggregations).forEach(driverId => {
-            const value = variant.aggregations[driverId]
-            if (value != null && value !== '') {
-              // Store formatted referenceId
-              const formattedRefId = `${driverId}_${String(value)}`
-              // If this driverId already exists, collect all values
-              if (!productAttributes[driverId]) {
-                productAttributes[driverId] = []
-              }
-              if (Array.isArray(productAttributes[driverId])) {
-                if (!productAttributes[driverId].includes(formattedRefId)) {
-                  productAttributes[driverId].push(formattedRefId)
-                }
-              } else {
-                // Convert to array if it was a single value
-                productAttributes[driverId] = [productAttributes[driverId], formattedRefId]
-              }
-            }
-          })
-        }
-      })
-      
-      // Convert arrays back to single values if there's only one unique value
-      Object.keys(productAttributes).forEach(key => {
-        if (Array.isArray(productAttributes[key])) {
-          const uniqueValues = [...new Set(productAttributes[key])]
-          productAttributes[key] = uniqueValues.length === 1 ? uniqueValues[0] : uniqueValues
-        }
-      })
-    }
-    
     // Map by product name (from the 'name' field)
     if (product.name) {
       // Store both the attributes and the product itself for reference
