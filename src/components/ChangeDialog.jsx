@@ -48,9 +48,17 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
   }
 
   const updateChange = (index, field, value) => {
-    const newChanges = [...changes]
-    newChanges[index] = { ...newChanges[index], [field]: value }
-    setChanges(newChanges)
+    try {
+      const newChanges = [...changes]
+      if (!newChanges[index]) {
+        console.error('Invalid change index:', index)
+        return
+      }
+      newChanges[index] = { ...newChanges[index], [field]: value }
+      setChanges(newChanges)
+    } catch (error) {
+      console.error('Error updating change:', error)
+    }
   }
 
   const updateChangeFilter = (changeIndex, driver, value, checked) => {
@@ -84,19 +92,64 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
   }
 
   const handleCreate = () => {
-    // Generate all scenario combinations from ranges
-    const scenarioCombinations = generateScenarioCombinations(changes)
-    onCreate(scenarioCombinations)
+    try {
+      // Validate changes before processing
+      const validChanges = changes.filter(change => {
+        // At least one change type should be set
+        const hasPriceChange = change.priceChange || (change.priceChangeRange && change.priceChangeFrom && change.priceChangeTo)
+        const hasAvailabilityChange = change.availabilityChange || (change.availabilityChangeRange && change.availabilityChangeFrom && change.availabilityChangeTo)
+        const hasCostChange = change.costChange || (change.costChangeRange && change.costChangeFrom && change.costChangeTo)
+        
+        return hasPriceChange || hasAvailabilityChange || hasCostChange
+      })
+      
+      if (validChanges.length === 0) {
+        alert('Please set at least one change (price, availability, or cost) before creating scenarios.')
+        return
+      }
+      
+      // Generate all scenario combinations from ranges
+      const scenarioCombinations = generateScenarioCombinations(validChanges)
+      
+      if (!scenarioCombinations || scenarioCombinations.length === 0) {
+        alert('Could not generate scenarios. Please check your settings.')
+        return
+      }
+      
+      onCreate(scenarioCombinations)
+    } catch (error) {
+      console.error('Error creating scenarios:', error)
+      alert('An error occurred while creating scenarios: ' + error.message)
+    }
   }
 
   const generateScenarioCombinations = (changes) => {
+    if (!changes || changes.length === 0) {
+      return []
+    }
+    
     // Collect all value ranges from all changes
     const allPriceValues = new Set()
     const allAvailabilityValues = new Set()
     const allCostValues = new Set()
     const allFilters = {}
+    const allCsvFilters = {}
     
     changes.forEach((change) => {
+      if (!change) return
+      
+      // Merge CSV filters
+      if (change.csvFilters) {
+        Object.keys(change.csvFilters).forEach(column => {
+          if (!allCsvFilters[column]) {
+            allCsvFilters[column] = new Set()
+          }
+          if (Array.isArray(change.csvFilters[column])) {
+            change.csvFilters[column].forEach(val => allCsvFilters[column].add(val))
+          }
+        })
+      }
+      
       // Merge filters
       if (change.filters) {
         Object.keys(change.filters).forEach(driver => {
@@ -158,6 +211,12 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
       mergedFilters[driver] = Array.from(allFilters[driver])
     })
     
+    // Convert CSV filter sets to arrays
+    const mergedCsvFilters = {}
+    Object.keys(allCsvFilters).forEach(column => {
+      mergedCsvFilters[column] = Array.from(allCsvFilters[column])
+    })
+    
     // Get change types from first change (assuming all changes use same type)
     const priceChangeType = changes[0]?.priceChangeType || 'Absolute'
     const availabilityChangeType = changes[0]?.availabilityChangeType || 'Absolute'
@@ -170,6 +229,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
     if (priceValues.length === 0 && availabilityValues.length === 0 && costValues.length === 0) {
       return [{
         filters: mergedFilters,
+        csvFilters: mergedCsvFilters,
         priceChange: undefined,
         priceChangeType: priceChangeType,
         availabilityChange: undefined,
@@ -191,6 +251,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
           if (priceVal !== null || availVal !== null || costVal !== null) {
             combinations.push({
               filters: mergedFilters,
+              csvFilters: mergedCsvFilters,
               priceChange: priceVal !== null ? priceVal : undefined,
               priceChangeType: priceChangeType,
               availabilityChange: availVal !== null ? availVal : undefined,
@@ -205,6 +266,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
     
     return combinations.length > 0 ? combinations : [{
       filters: mergedFilters,
+      csvFilters: mergedCsvFilters,
       priceChange: undefined,
       priceChangeType: priceChangeType,
       availabilityChange: undefined,
@@ -364,7 +426,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                       />
                     </div>
                     <select
-                      value={change.priceChangeType}
+                      value={change.priceChangeType || 'Absolute'}
                       onChange={(e) => updateChange(index, 'priceChangeType', e.target.value)}
                       className="change-type-select"
                     >
@@ -378,13 +440,13 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                     <input
                       type="number"
                       step="0.01"
-                      placeholder={change.priceChangeType === 'Target' ? 'Target price' : change.priceChangeType === 'Percentage' ? 'Change % (e.g., +10 or -5)' : 'Change amount (e.g., +5.00 or -2.50)'}
-                      value={change.priceChange}
+                      placeholder={(change.priceChangeType || 'Absolute') === 'Target' ? 'Target price' : (change.priceChangeType || 'Absolute') === 'Percentage' ? 'Change % (e.g., +10 or -5)' : 'Change amount (e.g., +5.00 or -2.50)'}
+                      value={change.priceChange || ''}
                       onChange={(e) => updateChange(index, 'priceChange', e.target.value)}
                       className="change-input"
                     />
                     <select
-                      value={change.priceChangeType}
+                      value={change.priceChangeType || 'Absolute'}
                       onChange={(e) => updateChange(index, 'priceChangeType', e.target.value)}
                       className="change-type-select"
                     >
@@ -444,7 +506,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                       />
                     </div>
                     <select
-                      value={change.availabilityChangeType}
+                      value={change.availabilityChangeType || 'Absolute'}
                       onChange={(e) => updateChange(index, 'availabilityChangeType', e.target.value)}
                       className="change-type-select"
                     >
@@ -457,13 +519,13 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                     <input
                       type="number"
                       step="0.01"
-                      placeholder={change.availabilityChangeType === 'Percentage' ? 'Change % (e.g., +10 or -5)' : 'Change amount (e.g., +5 or -10)'}
-                      value={change.availabilityChange}
+                      placeholder={(change.availabilityChangeType || 'Absolute') === 'Percentage' ? 'Change % (e.g., +10 or -5)' : 'Change amount (e.g., +5 or -10)'}
+                      value={change.availabilityChange || ''}
                       onChange={(e) => updateChange(index, 'availabilityChange', e.target.value)}
                       className="change-input"
                     />
                     <select
-                      value={change.availabilityChangeType}
+                      value={change.availabilityChangeType || 'Absolute'}
                       onChange={(e) => updateChange(index, 'availabilityChangeType', e.target.value)}
                       className="change-type-select"
                     >
@@ -522,7 +584,7 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                       />
                     </div>
                     <select
-                      value={change.costChangeType}
+                      value={change.costChangeType || 'Absolute'}
                       onChange={(e) => updateChange(index, 'costChangeType', e.target.value)}
                       className="change-type-select"
                     >
@@ -535,13 +597,13 @@ function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, on
                     <input
                       type="number"
                       step="0.01"
-                      placeholder={change.costChangeType === 'Percentage' ? 'Change % (e.g., +10 or -5)' : 'Change amount (e.g., +0.50 or -0.25)'}
-                      value={change.costChange}
+                      placeholder={(change.costChangeType || 'Absolute') === 'Percentage' ? 'Change % (e.g., +10 or -5)' : 'Change amount (e.g., +0.50 or -0.25)'}
+                      value={change.costChange || ''}
                       onChange={(e) => updateChange(index, 'costChange', e.target.value)}
                       className="change-input"
                     />
                     <select
-                      value={change.costChangeType}
+                      value={change.costChangeType || 'Absolute'}
                       onChange={(e) => updateChange(index, 'costChangeType', e.target.value)}
                       className="change-type-select"
                     >
