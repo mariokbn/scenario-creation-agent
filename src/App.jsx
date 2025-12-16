@@ -21,12 +21,28 @@ function App() {
   const [productNameLookup, setProductNameLookup] = useState(null)
   const [csvFile, setCsvFile] = useState(null)
   const [jsonFile, setJsonFile] = useState(null)
+  const [csvColumns, setCsvColumns] = useState([])
+  const [csvColumnValues, setCsvColumnValues] = useState({})
 
   const handleCsvUpload = async (file) => {
     try {
       const csvData = await parseCsvFile(file)
       setBaseScenario(csvData)
       setCsvFile(file)
+      
+      // Extract column names and unique values for AI training
+      if (csvData && csvData.length > 0) {
+        const columns = Object.keys(csvData[0])
+        setCsvColumns(columns)
+        
+        // Extract unique values for each column (for AI context)
+        const columnValues = {}
+        columns.forEach(col => {
+          const uniqueValues = [...new Set(csvData.map(row => row[col]).filter(val => val !== '' && val !== null && val !== undefined))].slice(0, 20)
+          columnValues[col] = uniqueValues
+        })
+        setCsvColumnValues(columnValues)
+      }
       
       // If JSON is already loaded, update filtered data
       if (productMaster) {
@@ -168,11 +184,24 @@ function App() {
           newRow[key] = row[key]
         })
         
-        // Check if this row matches the change criteria using Product Name lookup
-        let matches = false
+        // Check if this row matches the change criteria
+        let matches = true
         
-        // If filters are set, check if product matches
-        if (change.filters && Object.keys(change.filters).length > 0) {
+        // Check CSV column filters first (direct column matching)
+        if (change.csvFilters && Object.keys(change.csvFilters).length > 0) {
+          for (const column of Object.keys(change.csvFilters)) {
+            if (change.csvFilters[column].length > 0) {
+              const rowValue = row[column]
+              if (!change.csvFilters[column].includes(rowValue)) {
+                matches = false
+                break
+              }
+            }
+          }
+        }
+        
+        // Then check product master filters (if CSV filters passed or not set)
+        if (matches && change.filters && Object.keys(change.filters).length > 0) {
           // Match by Product Name (not Product Variant Id)
           const productName = row['Product Name']
           const productData = productNameLookup?.get(productName)
@@ -180,7 +209,6 @@ function App() {
           if (productData && productData.attributes) {
             // Check all filters in the change
             const attributes = productData.attributes
-            matches = true
             for (const driver of Object.keys(change.filters)) {
               if (change.filters[driver].length > 0) {
                 const attributeValue = attributes[driver]
@@ -190,9 +218,17 @@ function App() {
                 }
               }
             }
+          } else {
+            // Product not found in master, don't match
+            matches = false
           }
-        } else {
-          // If no filters are set, match all rows
+        }
+        
+        // If no filters at all, match all rows
+        if (!change.csvFilters && !change.filters) {
+          matches = true
+        } else if (change.csvFilters && Object.keys(change.csvFilters).length === 0 && 
+                   change.filters && Object.keys(change.filters).length === 0) {
           matches = true
         }
         
@@ -377,6 +413,8 @@ function App() {
               <LLMPrompt
                 valueDrivers={valueDrivers}
                 productMaster={productMaster}
+                csvColumns={csvColumns}
+                csvColumnValues={csvColumnValues}
                 onApplyChanges={handleCreateScenario}
                 onClose={() => setShowLLMPrompt(false)}
               />

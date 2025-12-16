@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Sparkles, X, Loader } from 'lucide-react'
 import './LLMPrompt.css'
 
-function LLMPrompt({ valueDrivers, productMaster, onApplyChanges, onClose }) {
+function LLMPrompt({ valueDrivers, productMaster, csvColumns, csvColumnValues, onApplyChanges, onClose }) {
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -18,7 +18,7 @@ function LLMPrompt({ valueDrivers, productMaster, onApplyChanges, onClose }) {
 
     try {
       // Call LLM API to interpret the prompt
-      const changes = await interpretPrompt(prompt, valueDrivers, productMaster)
+      const changes = await interpretPrompt(prompt, valueDrivers, productMaster, csvColumns, csvColumnValues)
       
       if (changes && changes.length > 0) {
         onApplyChanges(changes)
@@ -34,7 +34,7 @@ function LLMPrompt({ valueDrivers, productMaster, onApplyChanges, onClose }) {
     }
   }
 
-  const interpretPrompt = async (userPrompt, valueDrivers, productMaster) => {
+  const interpretPrompt = async (userPrompt, valueDrivers, productMaster, csvColumns, csvColumnValues) => {
     // Extract available value drivers and their options for context
     const valueDriverContext = Object.keys(valueDrivers).map(driver => ({
       name: driver,
@@ -42,16 +42,29 @@ function LLMPrompt({ valueDrivers, productMaster, onApplyChanges, onClose }) {
       options: valueDrivers[driver].slice(0, 10) // Limit to first 10 for context
     }))
 
+    // Extract CSV column information
+    const csvColumnContext = csvColumns ? csvColumns.map(col => ({
+      name: col,
+      displayName: col,
+      sampleValues: csvColumnValues && csvColumnValues[col] ? csvColumnValues[col].slice(0, 10) : []
+    })) : []
+
     // Create a system prompt that helps the LLM understand the structure
     const systemPrompt = `You are a scenario creation assistant. Your task is to interpret user requests and convert them into structured scenario change parameters.
 
-Available value drivers (filters):
+Available CSV columns (for direct filtering):
+${JSON.stringify(csvColumnContext, null, 2)}
+
+Available value drivers (from product master, for product-level filtering):
 ${JSON.stringify(valueDriverContext, null, 2)}
 
 You need to return a JSON array of change objects. Each change object should have this structure:
 {
   "filters": {
     "valueDriverReferenceId": ["option1", "option2"]
+  },
+  "csvFilters": {
+    "Column Name": ["value1", "value2"]
   },
   "priceChange": number or null,
   "priceChangeType": "Absolute" | "Percentage" | "Target",
@@ -76,7 +89,14 @@ You need to return a JSON array of change objects. Each change object should hav
 Rules:
 - If user mentions a range (e.g., "5% to 15%"), set the Range fields and leave the single value null
 - If user mentions a single value, set the single value field and set Range to false
-- For filters, match product attributes mentioned in the prompt (brand, format, material, etc.)
+- For filters, you can use TWO types:
+  1. "filters" - for product master value drivers (brand, format, material, etc.)
+  2. "csvFilters" - for CSV column filters (Is Competitor, Region, Retailer, etc.)
+- CSV column examples:
+  - "competitor" or "competitors" → csvFilters: {"Is Competitor": ["Yes"]}
+  - "own products" or "our products" → csvFilters: {"Is Competitor": ["No"]}
+  - "North region" → csvFilters: {"Region": ["North"]}
+  - "Retailer 1" → csvFilters: {"Retailer": ["Retailer 1"]}
 - Use "Absolute" for fixed amounts, "Percentage" for percentages
 - For price, use "Target" if user specifies a target price
 - Return only valid JSON, no markdown or explanations`
@@ -87,7 +107,7 @@ Rules:
     
     if (!apiKey) {
       // Fallback: Try to parse the prompt using simple heuristics
-      return parsePromptHeuristically(userPrompt, valueDrivers)
+      return parsePromptHeuristically(userPrompt, valueDrivers, csvColumns, csvColumnValues)
     }
 
     try {
@@ -149,11 +169,12 @@ Rules:
     }
   }
 
-  const parsePromptHeuristically = (prompt, valueDrivers) => {
+  const parsePromptHeuristically = (prompt, valueDrivers, csvColumns, csvColumnValues) => {
     // Simple heuristic parser as fallback
     const lowerPrompt = prompt.toLowerCase()
     const changes = [{
       filters: {},
+      csvFilters: {},
       priceChange: null,
       priceChangeType: 'Absolute',
       priceChangeRange: false,
@@ -173,6 +194,58 @@ Rules:
       costChangeTo: null,
       costChangeStep: '1'
     }]
+
+    // Extract CSV column filters
+    if (csvColumns) {
+      // Check for competitor mentions
+      if (lowerPrompt.includes('competitor') || lowerPrompt.includes('competitors')) {
+        const competitorCol = csvColumns.find(col => col.toLowerCase().includes('competitor'))
+        if (competitorCol) {
+          changes[0].csvFilters[competitorCol] = ['Yes']
+        }
+      }
+      
+      if (lowerPrompt.includes('own product') || lowerPrompt.includes('our product') || lowerPrompt.includes('own brand')) {
+        const competitorCol = csvColumns.find(col => col.toLowerCase().includes('competitor'))
+        if (competitorCol) {
+          changes[0].csvFilters[competitorCol] = ['No']
+        }
+      }
+
+      // Check for region mentions
+      csvColumns.forEach(col => {
+        if (col.toLowerCase().includes('region')) {
+          const regionValues = csvColumnValues && csvColumnValues[col] ? csvColumnValues[col] : []
+          regionValues.forEach(val => {
+            if (lowerPrompt.includes(val.toLowerCase())) {
+              if (!changes[0].csvFilters[col]) {
+                changes[0].csvFilters[col] = []
+              }
+              if (!changes[0].csvFilters[col].includes(val)) {
+                changes[0].csvFilters[col].push(val)
+              }
+            }
+          })
+        }
+      })
+
+      // Check for retailer mentions
+      csvColumns.forEach(col => {
+        if (col.toLowerCase().includes('retailer')) {
+          const retailerValues = csvColumnValues && csvColumnValues[col] ? csvColumnValues[col] : []
+          retailerValues.forEach(val => {
+            if (lowerPrompt.includes(val.toLowerCase())) {
+              if (!changes[0].csvFilters[col]) {
+                changes[0].csvFilters[col] = []
+              }
+              if (!changes[0].csvFilters[col].includes(val)) {
+                changes[0].csvFilters[col].push(val)
+              }
+            }
+          })
+        }
+      })
+    }
 
     // Extract filters - try to match value driver names and their options
     Object.keys(valueDrivers).forEach(driver => {
