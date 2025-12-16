@@ -27,11 +27,14 @@ export async function parseArchive(file) {
           content = await fileEntry.async('string')
         }
         
-        csvData = Papa.parse(content, {
-          header: true,
-          skipEmptyLines: true,
-          delimiter: ';'
-        }).data
+      // Parse CSV with semicolon delimiter (required for European number formats)
+      csvData = Papa.parse(content, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: ';',
+        quoteChar: '"',
+        escapeChar: '"'
+      }).data
       } else if (filename.endsWith('.json')) {
         const content = await fileEntry.async('string')
         jsonData = JSON.parse(content)
@@ -83,11 +86,14 @@ export async function parseCsvFile(file) {
     content = decoder.decode(arrayBuffer)
   }
   
-  const csvData = Papa.parse(content, {
-    header: true,
-    skipEmptyLines: true,
-    delimiter: ';'
-  }).data
+  const       // Parse CSV with semicolon delimiter (required for European number formats)
+      csvData = Papa.parse(content, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: ';',
+        quoteChar: '"',
+        escapeChar: '"'
+      }).data
   
   return csvData
 }
@@ -125,10 +131,13 @@ export async function parseZipArchive(file) {
         content = await file.async('string')
       }
       
+      // Parse CSV with semicolon delimiter (required for European number formats)
       csvData = Papa.parse(content, {
         header: true,
         skipEmptyLines: true,
-        delimiter: ';'
+        delimiter: ';',
+        quoteChar: '"',
+        escapeChar: '"'
       }).data
     } else if (filename.endsWith('.json')) {
       const content = await file.async('string')

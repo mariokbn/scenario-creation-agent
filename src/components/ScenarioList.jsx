@@ -5,10 +5,14 @@ import './ScenarioList.css'
 
 function ScenarioList({ scenarios }) {
   const downloadScenario = (scenario) => {
-    // Convert data to CSV format
+    // Convert data to CSV format - MUST use semicolon delimiter
+    // Using comma would break with European number formats (e.g., 1,234.56)
     const csv = Papa.unparse(scenario.data, {
       delimiter: ';',
-      header: true
+      header: true,
+      quotes: false,
+      escapeChar: '"',
+      newline: '\n'
     })
     
     // Create blob and download
@@ -36,11 +40,14 @@ function ScenarioList({ scenarios }) {
     try {
       const zip = new JSZip()
       
-      // Add each scenario as a CSV file to the zip
+      // Add each scenario as a CSV file to the zip - MUST use semicolon delimiter
       scenarios.forEach((scenario) => {
         const csv = Papa.unparse(scenario.data, {
           delimiter: ';',
-          header: true
+          header: true,
+          quotes: false,
+          escapeChar: '"',
+          newline: '\n'
         })
         
         // Add CSV file to zip with scenario name as filename
