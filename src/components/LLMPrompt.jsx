@@ -251,14 +251,14 @@ Rules:
     }
 
     // Extract filters - try to match value driver names and their options
-    Object.keys(valueDrivers).forEach(driver => {
+    Object.keys(valueDrivers).filter(driver => driver != null && typeof driver === 'string').forEach(driver => {
       const driverName = driver.toLowerCase().replace(/_/g, ' ')
       const driverWords = driverName.split(' ')
       
       // Check if prompt mentions this driver
       if (driverWords.some(word => lowerPrompt.includes(word)) || lowerPrompt.includes(driver)) {
         // Try to find matching options
-        valueDrivers[driver].forEach(option => {
+        (valueDrivers[driver] || []).filter(option => option != null && typeof option === 'string').forEach(option => {
           const optionName = option.toLowerCase().replace(/_/g, ' ')
           const optionWords = optionName.split(' ')
           
