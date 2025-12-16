@@ -205,19 +205,26 @@ export function extractValueDrivers(productMaster) {
             
             // Only process if it's a valid value driver key and has a value
             if (driverId && value != null && value !== '') {
-              // Convert value to string and create referenceId format
-              const referenceId = `${driverId}_${String(value)}`
+              const valueStr = String(value)
               
               if (typeof driverId === 'string') {
                 if (!drivers[driverId]) {
                   drivers[driverId] = new Set()
                 }
-                // Add both the formatted referenceId and the raw value
-                drivers[driverId].add(referenceId)
-                // Also add the raw value if it's different (for matching purposes)
-                if (referenceId !== String(value)) {
-                  drivers[driverId].add(String(value))
+                
+                // Check if the value already starts with the driverId (e.g., "pack_size_6")
+                // If so, use it as-is; otherwise, format it as "driverId_value"
+                let referenceId
+                if (valueStr.startsWith(`${driverId}_`)) {
+                  // Value already has the driver name prefix, use as-is
+                  referenceId = valueStr
+                } else {
+                  // Value is just the raw value (e.g., "6"), format it
+                  referenceId = `${driverId}_${valueStr}`
                 }
+                
+                // Only add the formatted referenceId (don't add raw value separately)
+                drivers[driverId].add(referenceId)
               }
             }
           })
