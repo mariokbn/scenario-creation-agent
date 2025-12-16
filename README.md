@@ -1,6 +1,16 @@
 # Scenario Creation Agent
 
-A web application for creating product scenario variations based on a base scenario CSV and product master JSON file.
+A professional web application for creating product scenario variations with AI-powered assistance. Built with React, Vite, Supabase, and deployed on Vercel.
+
+## 🚀 Features
+
+- **Dual File Upload**: Upload CSV and JSON files separately
+- **Value Driver Filters**: Filter products based on value drivers extracted from product master
+- **Range-Based Scenarios**: Create multiple scenarios with range inputs (e.g., 5% to 15%)
+- **AI-Powered Creation**: Natural language interface for scenario creation (OpenAI integration)
+- **Cloud Storage**: Automatic saving to Supabase database
+- **Export Options**: Download individual scenarios or all as ZIP
+- **Professional UI**: Modern, responsive design with smooth animations
 
 ## Features
 
@@ -14,27 +24,67 @@ A web application for creating product scenario variations based on a base scena
   - Costs (absolute or percentage)
 - **Export**: Download created scenarios as CSV files
 
-## Getting Started
+## 🏗️ Tech Stack
+
+- **Frontend**: React 19, Vite
+- **Styling**: CSS3 with modern gradients and animations
+- **Database**: Supabase (PostgreSQL)
+- **AI**: OpenAI GPT-4o-mini (optional)
+- **Deployment**: Vercel
+- **Icons**: Lucide React
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- Supabase account (free tier works)
+- OpenAI API key (optional, for AI features)
 
 ### Installation
 
+1. Clone the repository:
+```bash
+git clone https://github.com/YOUR_USERNAME/scenario-creation-agent.git
+cd scenario-creation-agent
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-### Development
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
 
+4. Fill in your `.env` file with:
+   - Supabase URL and anon key
+   - OpenAI API key (optional)
+
+5. Set up Supabase:
+   - Create a new Supabase project
+   - Run the SQL script from `supabase/schema.sql` in the SQL Editor
+
+6. Start development server:
 ```bash
 npm run dev
 ```
 
 The application will be available at `http://localhost:3000`
 
-### Build
+### Production Build
 
 ```bash
 npm run build
+npm run preview
 ```
+
+## 📦 Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions to Vercel.
 
 ## Usage
 

@@ -39,3 +39,11 @@ lerna-debug.log*
 
 # Supabase
 .supabase
+
+# Input files (user data)
+01_input/
+*.csv
+*.csv.gz
+*.json
+!package.json
+!package-lock.json
