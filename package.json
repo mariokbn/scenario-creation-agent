@@ -1,0 +1,40 @@
+{
+  "name": "scenario-creation-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Professional web application for creating product scenario variations with AI-powered assistance",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/scenario-creation-agent.git"
+  },
+  "keywords": [
+    "scenario",
+    "pricing",
+    "product-management",
+    "ai",
+    "analytics"
+  ],
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.87.3",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.561.0",
+    "papaparse": "^5.5.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^5.4.21"
+  }
+}
