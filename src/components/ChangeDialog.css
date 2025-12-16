@@ -243,6 +243,22 @@
   gap: 10px;
 }
 
+.filters-applied-indicator {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pre-selected-badge {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: 600;
+}
+
 .range-toggle-group {
   margin-bottom: 10px;
 }

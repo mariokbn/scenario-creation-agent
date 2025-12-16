@@ -428,6 +428,7 @@ function App() {
                 filters={filters}
                 valueDrivers={valueDrivers}
                 productMaster={productMaster}
+                currentFilters={filters}
                 onClose={() => {
                   setShowChangeDialog(false)
                   setAiGeneratedChanges(null)

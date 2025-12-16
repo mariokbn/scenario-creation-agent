@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import './ChangeDialog.css'
 
-function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate, initialChanges }) {
+function ChangeDialog({ filters, valueDrivers, productMaster, currentFilters, onClose, onCreate, initialChanges }) {
   const getDefaultChange = () => ({
-    filters: {},
+    filters: currentFilters ? { ...currentFilters } : {},
     csvFilters: {},
     priceChange: '',
     priceChangeRange: false,
@@ -30,8 +30,11 @@ function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate,
     ? initialChanges.map(change => ({
         ...getDefaultChange(),
         ...change,
-        // Ensure filters and csvFilters exist
-        filters: change.filters || {},
+        // Merge current filters with AI-generated filters (AI filters take precedence)
+        filters: {
+          ...(currentFilters || {}),
+          ...(change.filters || {})
+        },
         csvFilters: change.csvFilters || {}
       }))
     : [getDefaultChange()])
@@ -278,11 +281,21 @@ function ChangeDialog({ filters, valueDrivers, productMaster, onClose, onCreate,
 
               <div className="change-section">
                 <h4>Product Filters (Value Drivers)</h4>
-                <p className="section-description">Select value drivers to target specific products</p>
+                <p className="section-description">
+                  Select value drivers to target specific products
+                  {currentFilters && Object.keys(currentFilters).some(k => currentFilters[k]?.length > 0) && (
+                    <span className="filters-applied-indicator"> (Filters from main page are pre-selected)</span>
+                  )}
+                </p>
                 <div className="filter-grid">
                   {Object.keys(valueDrivers).map(driver => (
                     <div key={driver} className="filter-select-group">
-                      <label className="filter-select-label">{formatDriverName(driver)}</label>
+                      <label className="filter-select-label">
+                        {formatDriverName(driver)}
+                        {currentFilters && currentFilters[driver]?.length > 0 && (
+                          <span className="pre-selected-badge">Pre-selected</span>
+                        )}
+                      </label>
                       <div className="filter-select-options">
                         {valueDrivers[driver].slice(0, 5).map(value => (
                           <label key={value} className="filter-select-option">
